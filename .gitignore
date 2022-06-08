@@ -1,0 +1,24 @@
+
+# folders
+__pycache__
+.ipynb_checkpoints
+data
+waymo_open_dataset
+.git
+
+experiments/reference/eval
+experiments/reference/exported
+experiments/reference/tensorboard
+experiments/reference/train
+
+experiments/experiment1/checkpoint
+experiments/experiment1/eval
+experiments/experiment1/exported
+experiments/experiment1/tensorboard
+experiments/experiment1/train
+
+experiments/experiment2/checkpoint
+experiments/experiment2/eval
+experiments/experiment2/exported
+experiments/experiment2/tensorboard
+experiments/experiment2/train
