@@ -227,7 +227,7 @@ A video based on the model inferences for `data/test/segment-1220038340136668284
 ![aug2](figures/aug_contrast.png)
 - brightness adjusted to 0.3: this could better simulate very sunny day with very bright light
 ![aug3](figures/aug_bright.png) 
-More details of the agumentation can be found in `Explore augmentations.ipynb`, and the detailed pipeline is in `experiments/experiment2/pipeline_new.config`. However, due to limitation of memory in the VM workspace, we have to resort to batch size of `2`, and step size of `2500`, which is very likely not enough for the network to converge. As a result, the performance does improve too much, compared with reference model.
+More details of the agumentation can be found in `Explore augmentations.ipynb`, and the detailed pipeline is in `experiments/experiment2/pipeline_new.config`. However, due to limitation of memory in the VM workspace, we have to resort to batch size of `2`, and step size of `2500`, which is very likely not enough for the network to converge. As a result, the performance does improve a lot, compared with reference model.
 
 The results are as follows.
 - Training and validation loss of the model
