@@ -1,7 +1,7 @@
 import argparse
 import glob
 
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 from google.protobuf import text_format
 from object_detection.protos import pipeline_pb2
 

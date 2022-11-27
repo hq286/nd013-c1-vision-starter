@@ -4,7 +4,7 @@ import os
 import subprocess
 
 import ray
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 from PIL import Image
 from psutil import cpu_count
 from waymo_open_dataset import dataset_pb2 as open_dataset
@@ -115,7 +115,7 @@ def process_tfr(path, data_dir):
     file_name = os.path.basename(path)
 
     logger.info(f'Processing {path}')
-    writer = tf.python_io.TFRecordWriter(f'{dest}/{file_name}')
+    writer = tf.io.TFRecordWriter(f'{dest}/{file_name}')
     dataset = tf.data.TFRecordDataset(path, compression_type='')
     for idx, data in enumerate(dataset):
         frame = open_dataset.Frame()
