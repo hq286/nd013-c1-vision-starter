@@ -135,7 +135,7 @@ This should create a new folder `experiments/reference/exported/saved_model`. Yo
 
 Finally, you can create a video of your model's inferences for any tf record file. To do so, run the following command (modify it to your files):
 ```
-python inference_video.py --labelmap_path label_map.pbtxt --model_path experiments/reference/exported/saved_model --tf_record_path /data/waymo/testing/segment-12200383401366682847_2552_140_2572_140_with_camera_labels.tfrecord --config_path experiments/reference/pipeline_new.config --output_path animation.gif
+python inference_video.py --labelmap_path label_map.pbtxt --model_path experiments/reference/exported/saved_model --tf_record_path /data/test/segment-12200383401366682847_2552_140_2572_140_with_camera_labels.tfrecord --config_path experiments/reference/pipeline_new.config --output_path animation.gif
 ```
 
 ## Solution
@@ -181,61 +181,111 @@ gcloud auth login
 ### Dataset
 <!-- This section should contain a quantitative and qualitative description of the dataset. It should include images, charts and other visualizations. -->
 In this dataset, we have to fit rectangular bounding boxes to bound the objects in the images, such as cars, pedestrians, and cyclists. Here are some examples of the images in the dataset 
-<!-- TODO: put images of dataset-->
-![EDA_instances](figures/eda_instances_4.png)
+    ![EDA_instances](figures/eda_instances_4.png)
 Red bounding box denotes cars, blue for pedestrians, and green for cyclists.
 Images are taken from different locations (highways/cities), with different weathers (sunny/rainy/foggy), and at different time(days/nights). With these different conditions, some images look clear, bright, while others look blurry, dark. We can see that many of the objects in these images are hardly spotable by human eyes. Thus, it is reasonable to expect that the network will not have perfect performance. However, we should at least obtain a model that can detect and classify the objects nearby.
 
 #### Dataset analysis
 From a first glance, it appears that there are more cars than pedestrians and cyclists. Cyclists seem to be barely seen among all the images. Some statistics of the dataset are provided in `Exploratory Data Analysis.ipynb`. There is a class imbalance between cars and pedestrians, cyclists, which is demonstrated in the following plot of number of total occurrences of objects of different classes in 10000 images randomly taken from the dataset.
-<!-- TODO: put images of count of cars, peds, cycs-->
-![EDA_1](figures/EDA_1.png) 
+
+![EDA_1](figures/EDA_1.png)
+
 Here are also histograms demonstrating distributions of cars, pedestrians, and cyclists in these 10000 images. From these plots, we can see that there is no cyclist in over 85% of the images in the dataset
+    
 ![EDA_2](figures/EDA_2.png) ![EDA_3](figures/EDA_3.png) ![EDA_4](figures/EDA_4.png)
 
 #### Cross validation
 <!-- This section should detail the cross validation strategy and justify your approach. -->
-Ideal ML algorithm should generalize well to larger unknown environment beyond that of training datasets. Here, due to the computational expense of CNN, we choose the simplest cross validation method by splitting the datasets into 75% training, 15% validation, 10% testing. We are using 0.75 : 0.15 as the ratio of training and validation because we only have 100 tfrecord samples. 75% ensures that we have enough data for training, and it normally will not lead to an issue of overfitting. Meanwhile, we have 10% of data for testing to check the error rates of the model on unseen data and if the model generalizes well.
+Ideal ML algorithm should generalize well to larger unknown environment beyond that of training datasets. Here, due to the computational expense of CNN, we choose the simplest cross validation method by splitting the datasets into 70% training, 15% validation, 15% testing. We are using 0.70 : 0.15 as the ratio of training and validation because we only have 100 tfrecord samples. 70% ensures that we have enough data for training, and it normally will not lead to an issue of overfitting. Meanwhile, we have 15% of data for testing to check the error rates of the model on unseen data and if the model generalizes well.
 
 ### Training
 #### Reference experiment
-The reference model is ResNet50 without augumentaion (see details of model parameters in `experiments/reference/pipeline_new.config`). Training loss of the model is shown as follows:
-![reference_train](experiments/reference/tensorboard/reference_train_loss.png)
-Precision:
-![reference_eval1](experiments/reference/tensorboard/mAP.png) 
-Recall:
-![reference_eval2](experiments/reference/tensorboard/recall.png)
-From the plots, it is obvious that both losses are very noisy, especially localization loss. And localization loss does not seem to converge. Precision and Recall are extremly low and the model can barely detect and classify any object. 
+The reference model is ResNet50 without augumentaion (see details of model parameters in `pipeline.config`). Training loss of the model is shown as follows:
+    ![reference_train](figures/reference_loss.png)
+From the plots, it is obvious that both losses are large and very noisy, especially localization loss. And localization loss does not seem to converge. Precision and Recall are extremly low and the model can barely detect and classify any object. 
 
 #### Improve on the reference
-1. Increase the **batch size** from `2` to `8`: batch size of `2` and `4` are too low for regular training of a large-size CNN like ResNet50. The detailed pipeline is in `experiments/experiment1/pipeline_new.config`. The results are as follows.
-- Training and validation loss of the model
-![exp1_loss](experiments/experiment1/tensorboard/loss.png)
-- Precision
-![exp1_precision](experiments/experiment1/tensorboard/precision.png)
-- Recall
-![exp1_recall](experiments/experiment1/tensorboard/recall.png)
-We see significant improvement in model loss, and Precision-Recall rate. This is a indication of better performance. 
-A video based on the model inferences for `data/test/segment-12200383401366682847_2552_140_2572_140_with_camera_labels.tfrecord`. We can see the model is now able to detect and classify objects nearby, but not the smaller objects far away.
-![exp1_video](experiments/experiment1/animation.gif)
+1. Increase the **batch size** from `2` to `16`, training steps from 2500 to 5000: batch size of `2` is too small for regular training of a large-size CNN like ResNet50. The detailed pipeline is in `experiments/experiment1/pipeline_new.config`. The results are as follows.
+- Training loss of the model
+    ![exp1_loss](figures/experiment1_loss.png)
+- Validation Precision & Precision
+    ```
+        Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.084                                  
+        Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.158                                  
+        Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.082                                  
+        Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.027                                  
+        Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.222                                  
+        Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.314                                  
+        Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.024                                  
+        Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.093                                  
+        Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.135                                  
+        Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.071                                  
+        Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.315                                  
+        Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.370
+    ```
+- An inference example:
+    We see significant improvement in model loss, and Precision-Recall rate. This is a indication of better performance. 
+    An inference example is as follows. We can see the model is now able to detect and classify objects nearby, but not the smaller objects far away.
+    ![inference_exp1_0](figures/inference_ssd_exp1_1.png)
 
+2. Longer training time: increase the steps to 25000. The detailed pipeline is in `experiments/experiment1/pipeline_new.config`. The results are as follows.
+- Training loss of the model
+    ![exp1_loss](figures/experiment2_loss.png)
+- Validation Precision & Precision
+    ```
+        Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.177
+        Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.309
+        Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.169
+        Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.078
+        Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.422
+        Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.570
+        Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.041
+        Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.178
+        Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.232
+        Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.144
+        Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.469
+        Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.605
+    ```
+- An inference example:
+    ![inference_exp2_0](figures/inference_ssd_exp2_1.png)
 
-2. **Augmentation**
+- Two inference videos on the test data in 
+    - `data/test/segment-12200383401366682847_2552_140_2572_140_with_camera_labels.tfrecord`
+    - `data/test/segment-10017090168044687777_6380_000_6400_000_with_camera_labels.tfrecord`
+    ![inference_video_0](figures/animation0.gif)
+    ![inference_video_1](figures/animation1.gif)
+
+3. **Augmentation**
 - 0.2 probability of grayscale conversion: this could better simulate rainy or foggy weather conditions, or area under huge shadow
-![aug1](figures/aug5.png)
+    ![aug1](figures/aug5.png)
 - contrast value from 0.5 to 1.0: this added more variation to edge detectability
-![aug2](figures/aug_contrast.png)
+    ![aug2](figures/aug_contrast.png)
 - brightness adjusted to 0.3: this could better simulate very sunny day with very bright light
-![aug3](figures/aug_bright.png) 
-More details of the agumentation can be found in `Explore augmentations.ipynb`, and the detailed pipeline is in `experiments/experiment2/pipeline_new.config`. However, due to limitation of memory in the VM workspace, we have to resort to batch size of `2`, and step size of `2500`, which is very likely not enough for the network to converge. As a result, the performance does improve a lot, compared with reference model.
+    ![aug3](figures/aug_bright.png) 
+More details of the agumentation can be found in `Explore augmentations.ipynb`, and the detailed pipeline is in `experiments/experiment3/pipeline_new.config`. The steps are set to be 5000, same as `experiment 1`.
 
-The results are as follows.
-- Training and validation loss of the model
-![exp1_loss](experiments/experiment2/tensorboard/loss.png)
-- Precision
-![exp1_precision](experiments/experiment2/tensorboard/precision.png)
-- Recall
-![exp1_recall](experiments/experiment2/tensorboard/recall.png)
-Althought we see a decrease in model loss, increase in precision and recall is tiny. The inference result is almost the same as that of the reference model, which barely detect anything. Thus, there is no pointing showing the inference video here.  
+The results are as follows:
+- Training loss of the model
+    ![exp1_loss](figures/experiment3_loss.png)
+- Validation Precision & Precision
+    ```
+        Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.179                                  
+        Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.332                                  
+        Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.165                                  
+        Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.074                                  
+        Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.461                                  
+        Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.553                                  
+        Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.042                                  
+        Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.178                                  
+        Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.239                                  
+        Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.143                                  
+        Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.524                                  
+        Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.605
+    ```
+- An inference example:
+    ![inference_exp2_0](figures/inference_ssd_exp3_1.png)
 
-By investigating the model on the test dataset, we can see the model is not goot at detecting small objects in the images. As cyclists only appear very scarcely in the datasets, we can expect the model to struggle to detect cyclists. In the future, improvements can be made in using higher resolution data for training, and sampling with more images with cyclist. More importantly, we want train for more steps with lower learning rate so that the model converges, provided that computers have larger computational resources and memories.
+We see a decrease in model loss compared to `experiment 1`, increase in precision and recall is siginificant. More surprisingly, both training and validation result are comparable to `experiment 2` with 10 ten times more training steps. **Data augmetation really helps the training and generelization to a large extent!**
+  
+
+By investigating the model on the test dataset, we can see the model is not goot at detecting small objects in the images. As cyclists only appear very scarcely in the datasets, we can expect the model to struggle to detect cyclists. In the future, improvements can be made in using higher resolution data for training, and sampling more images with cyclist. More importantly, we want train for more steps with lower learning rate so that the model converges, given the computers have larger computational resources and memories.

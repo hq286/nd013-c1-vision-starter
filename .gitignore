@@ -6,9 +6,7 @@ data
 waymo_open_dataset
 .git
 
-experiments/reference/eval
-experiments/reference/exported
-experiments/reference/train
+experiments/reference
 
 experiments/experiment1/checkpoint
 experiments/experiment1/eval
@@ -19,3 +17,5 @@ experiments/experiment2/checkpoint
 experiments/experiment2/eval
 experiments/experiment2/exported
 experiments/experiment2/train
+
+experiments/pretrained_model

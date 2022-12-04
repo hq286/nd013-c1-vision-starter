@@ -95,7 +95,8 @@ def main(labelmap_path, model_path, tf_record_path, config_path, output_path):
         im_obj.set_data(image)
         
     anim = animation.FuncAnimation(f, animate, frames=198)
-    anim.save(output_path, fps=5, dpi=300)
+    writer = animation.PillowWriter(fps=5)
+    anim.save(output_path, dpi=300, writer=writer)
 
 
 if __name__ == "__main__": 
